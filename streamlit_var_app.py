@@ -26,34 +26,32 @@ asset_list = list(default_weights.keys())
 # --- Initialize session state for weights ---
 if 'weights' not in st.session_state:
     st.session_state.weights = default_weights.copy()
+
+# Initialize each slider key in session state if not already present
+for asset in asset_list:
+    key = f"weight_{asset}"
+    if key not in st.session_state:
+        st.session_state[key] = default_weights[asset]
+
 # A helper that keeps the slider keys consistent with our dictionary
 def get_weight_key(asset):
     return f"weight_{asset}"
 
 # --- Callback: Redistribute Weights ---
 def update_weights(changed_asset):
-    # Retrieve the slider value for the asset just updated
     changed_key = get_weight_key(changed_asset)
     new_val = st.session_state[changed_key]
     st.session_state.weights[changed_asset] = new_val
 
-    # Calculate how much weight is left for all other assets
     remaining_weight = 1.0 - new_val
-
-    # Get list of all assets except the one that just changed
     other_assets = [a for a in asset_list if a != changed_asset]
-    
-    # Sum of the current weights for the other assets
     current_other_total = sum(st.session_state.weights[a] for a in other_assets)
     
-    # If the other assets currently have no allocation (to avoid division by zero),
-    # set them all to 0.
     if current_other_total == 0:
         for a in other_assets:
             st.session_state.weights[a] = 0.0
             st.session_state[get_weight_key(a)] = 0.0
     else:
-        # Adjust each other asset in proportion to its current allocation
         for a in other_assets:
             proportion = st.session_state.weights[a] / current_other_total
             new_weight = proportion * remaining_weight
@@ -68,13 +66,12 @@ for asset in asset_list:
         label=f"{asset} Weight",
         min_value=0.0,
         max_value=1.0,
-        value=st.session_state.weights[asset],
         step=0.01,
         key=get_weight_key(asset),
         on_change=update_weights,
         args=(asset,)
     )
-
+    
 # After the callbacks run, extract the reactive weights dictionary
 weights = {asset: st.session_state[get_weight_key(asset)] for asset in asset_list}
 
