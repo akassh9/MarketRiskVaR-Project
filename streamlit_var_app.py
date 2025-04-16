@@ -68,25 +68,23 @@ st.dataframe(
         'background-color': '#f9f9f9',
         'color': '#222',
         'border-color': 'black',
-        'font-size': '24px',          # Adjusted font size
+        'font-size': '20px',          # Reduced font size
         'text-align': 'center',      
         'vertical-align': 'middle',
-        'padding': '15px',           # Added padding
-        'height': '50px'             # Added height
+        'padding': '8px',            # Reduced padding
     }).set_table_styles([
         {'selector': 'th', 'props': [
             ('background-color', '#d6eaf8'),
             ('color', '#222'),
-            ('font-size', '26px'),    # Slightly larger header font
+            ('font-size', '22px'),    # Reduced header font size
             ('text-align', 'center'),
             ('vertical-align', 'middle'),
-            ('padding', '15px'),
-            ('height', '50px')
+            ('padding', '8px'),       # Reduced padding
         ]},
-        {'selector': '', 'props': [   # Add border to table
+        {'selector': '', 'props': [
             ('border', '2px solid black'),
         ]}
     ]),
     use_container_width=True,
-    height=200  # Added fixed height to make cells larger
+    height=150                        # Reduced height
 )
