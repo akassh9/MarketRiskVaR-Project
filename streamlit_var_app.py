@@ -78,7 +78,7 @@ weights = {asset: st.session_state[get_weight_key(asset)] for asset in asset_lis
 # --- (Rest of your application code follows) ---
 
 # Example: Loading data for individual assets (paths assumed correct)
-aapl = pd.read_csv("apple_data_cleaned.csv", header=[0,1], index_col=0)
+aapl = pd.read_csv("aapl_data_cleaned.csv", header=[0,1], index_col=0)
 msft = pd.read_csv("msft_data_cleaned.csv", header=[0,1], index_col=0)
 jnj = pd.read_csv("jnj_data_cleaned.csv", header=[0,1], index_col=0)
 jpm = pd.read_csv("jpm_data_cleaned.csv", header=[0,1], index_col=0)
@@ -88,7 +88,7 @@ vti = pd.read_csv("vti_data_cleaned.csv", header=[0,1], index_col=0)
 tlt = pd.read_csv("tlt_data_cleaned.csv", header=[0,1], index_col=0)
 gld = pd.read_csv("gld_data_cleaned.csv", header=[0,1], index_col=0)
 vnq = pd.read_csv("vnq_data_cleaned.csv", header=[0,1], index_col=0)
-sp500 = pd.read_csv("sp500_data_cleaned.csv", header=[0,1], index_col=0)
+sp500 = pd.read_csv("gspc_data_cleaned.csv", header=[0,1], index_col=0)
 
 # --- Extract returns and compute portfolio returns ---
 aapl_returns = aapl[('Log Returns', 'AAPL')]
