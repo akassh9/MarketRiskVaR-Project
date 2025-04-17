@@ -100,9 +100,9 @@ ax.legend(loc='upper left', fontsize=12)
 st.pyplot(fig)
 
 # 10. Breach Rate Table
+st.header('Breach Rate by Period (%)')
 table_html = f"""
 <div style="background-color:#dbe2ef; color:#222; padding:20px; border-radius:8px; margin-top:20px; width:80%; border:1px solid #ccc;">
-  <h3 style="font-size:20px; color:#222;">Breach Rate by Period (%)</h3>
   <table style="width:100%; font-size:16px; border-collapse:collapse;">
     <thead>
       <tr style="background-color:#a3bffa; color:#222;">
@@ -136,9 +136,10 @@ table_html = f"""
 </div>
 """
 st.markdown(table_html, unsafe_allow_html=True)
+st.text('As visible on the table the number of breaches increased significantly during uncertain times like the COVID window.')
 
 # 11. Violation Severity Plot
-st.subheader("Violation Severity During COVID Window")
+st.header("Violation Severity During COVID Window")
 # Calculate severity: amount by which loss exceeded historical VaR
 period_returns = portfolio_returns[mask_mid]
 hist_cutoff = hist_var[mask_mid]
@@ -198,4 +199,10 @@ st.pyplot(fig3)
 st.markdown(
     "_Each bar shows how far the portfolio’s loss exceeded its 1‑day 99% historical VaR on that date. "
     "Bars are annotated in % points, and deeper reds indicate larger breaches._"
+)
+
+st.text(
+    'The severity of breaches is a useful measure of risk management effectiveness. ' \
+    'For example, on the day with the 13.7% loss beyond VaR, a portfolio with 100,000 USD would have lost 13,700 USD on top of the predicted loss value. ' \
+    
 )
