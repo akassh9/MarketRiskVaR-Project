@@ -1,190 +1,159 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import norm, t, skewnorm
 import plotly.graph_objects as go
+from scipy.stats import norm
 
-st.set_page_config(layout="wide")
+# --- Page Configuration & Theme ---
+st.set_page_config(page_title="Visualizing Risk", layout="wide", page_icon="📊")
 
-# --- Default Weights ---
-default_weights = {
-    'AAPL': 0.15,
-    'MSFT': 0.15,
-    'JNJ': 0.10,
-    'JPM': 0.10,
-    'XOM': 0.10,
-    'NVDA': 0.05,
-    'VTI': 0.10,
-    'TLT': 0.10,
-    'GLD': 0.05,
-    'VNQ': 0.05,
-    '^GSPC': 0.05
-}
-asset_list = list(default_weights.keys())
+# --- Section: Introduction ---
+st.markdown(
+    """
+    ## Portfolio Risk Overview
+    This interactive dashboard illustrates **Value at Risk (VaR)** and **Expected Shortfall (ES)** for a customizable multi-asset portfolio. Recruiters can inspect both the quantitative results and the underlying code snippets (expand the sections below).
+    """
+)
 
-# --- Initialize session state for weights ---
-if 'weights' not in st.session_state:
-    st.session_state.weights = default_weights.copy()
+# --- Default Portfolio Weights & Session State ---
+# We use session state to persist slider values and ensure total allocation = 100%
+def get_default_weights():
+    return {
+        'AAPL': 0.15, 'MSFT': 0.15, 'JNJ': 0.10, 'JPM': 0.10,
+        'XOM': 0.10, 'NVDA': 0.05, 'VTI': 0.10, 'TLT': 0.10,
+        'GLD': 0.05, 'VNQ': 0.05, '^GSPC': 0.05
+    }
+asset_list = list(get_default_weights().keys())
 
-# Initialize each slider key in session state if not already present
-for asset in asset_list:
+# Initialize weights dict if missing
+st.session_state.setdefault('weights', get_default_weights().copy())
+# Initialize each slider key and sync back to weights dict
+for asset, default_w in get_default_weights().items():
     key = f"weight_{asset}"
-    if key not in st.session_state:
-        st.session_state[key] = default_weights[asset]
+    st.session_state.setdefault(key, default_w)
+    # Ensure main weights dict stays aligned
+    st.session_state['weights'][asset] = st.session_state[key]
 
-# A helper that keeps the slider keys consistent with our dictionary
-def get_weight_key(asset):
-    return f"weight_{asset}"
-
-# --- Callback: Redistribute Weights ---
+# Callback: redistribute weights when one slider changes
 def update_weights(changed_asset):
-    changed_key = get_weight_key(changed_asset)
+    changed_key = f"weight_{changed_asset}"
     new_val = st.session_state[changed_key]
-    st.session_state.weights[changed_asset] = new_val
+    # Update main dict
+    st.session_state['weights'][changed_asset] = new_val
 
-    remaining_weight = 1.0 - new_val
-    other_assets = [a for a in asset_list if a != changed_asset]
-    current_other_total = sum(st.session_state.weights[a] for a in other_assets)
-    
-    if current_other_total == 0:
-        for a in other_assets:
-            st.session_state.weights[a] = 0.0
-            st.session_state[get_weight_key(a)] = 0.0
+    remaining = 1 - new_val
+    others = [a for a in asset_list if a != changed_asset]
+    total_others = sum(st.session_state['weights'][a] for a in others)
+    if total_others == 0:
+        for a in others:
+            st.session_state['weights'][a] = 0.0
+            st.session_state[f"weight_{a}"] = 0.0
     else:
-        for a in other_assets:
-            proportion = st.session_state.weights[a] / current_other_total
-            new_weight = proportion * remaining_weight
-            st.session_state.weights[a] = new_weight
-            st.session_state[get_weight_key(a)] = new_weight
+        for a in others:
+            prop = st.session_state['weights'][a] / total_others
+            w = prop * remaining
+            st.session_state['weights'][a] = w
+            st.session_state[f"weight_{a}"] = w
 
-# --- Sidebar: Reactive Slider Inputs ---
+# --- Sidebar: Controls ---
 st.sidebar.title("VaR Settings")
-st.sidebar.markdown("### Adjust Asset Weights\n(The sliders are reactive and will keep the total allocation equal to 100%)")
+st.sidebar.markdown("#### 1) Adjust Asset Weights (sum must be 100%)")
 for asset in asset_list:
     st.sidebar.slider(
-        label=f"{asset} Weight",
-        min_value=0.0,
-        max_value=1.0,
-        step=0.01,
-        key=get_weight_key(asset),
-        on_change=update_weights,
-        args=(asset,)
+        label=f"{asset}", min_value=0.0, max_value=1.0, step=0.01,
+        key=f"weight_{asset}", on_change=update_weights, args=(asset,)
     )
-    
-# After the callbacks run, extract the reactive weights dictionary
-weights = {asset: st.session_state[get_weight_key(asset)] for asset in asset_list}
 
-# --- (Rest of your application code follows) ---
+st.sidebar.markdown("#### 2) Risk Parameters")
+confidence = st.sidebar.slider("Confidence Level", 0.90, 0.995, 0.99, step=0.005)
+horizon = st.sidebar.selectbox("VaR Horizon (days)", [1, 5, 10], index=0)
+historical_window = st.sidebar.slider("Historical Window (days)", 250, 2000, 1000, step=50)
+show_es = st.sidebar.checkbox("Display Expected Shortfall (ES)?", value=True)
+portfolio_value = st.sidebar.number_input(
+    "Portfolio Value (USD)", min_value=1_000.0, value=100_000.0, step=1_000.0, format="%.2f"
+)
 
-# Example: Loading data for individual assets (paths assumed correct)
-aapl = pd.read_csv("aapl_data_cleaned.csv", header=[0,1], index_col=0)
-msft = pd.read_csv("msft_data_cleaned.csv", header=[0,1], index_col=0)
-jnj = pd.read_csv("jnj_data_cleaned.csv", header=[0,1], index_col=0)
-jpm = pd.read_csv("jpm_data_cleaned.csv", header=[0,1], index_col=0)
-xom = pd.read_csv("xom_data_cleaned.csv", header=[0,1], index_col=0)
-nvda = pd.read_csv("nvda_data_cleaned.csv", header=[0,1], index_col=0)
-vti = pd.read_csv("vti_data_cleaned.csv", header=[0,1], index_col=0)
-tlt = pd.read_csv("tlt_data_cleaned.csv", header=[0,1], index_col=0)
-gld = pd.read_csv("gld_data_cleaned.csv", header=[0,1], index_col=0)
-vnq = pd.read_csv("vnq_data_cleaned.csv", header=[0,1], index_col=0)
-sp500 = pd.read_csv("gspc_data_cleaned.csv", header=[0,1], index_col=0)
+# Extract final weights dictionary
+weights = st.session_state['weights'].copy()
 
-# --- Extract returns and compute portfolio returns ---
-aapl_returns = aapl[('Log Returns', 'AAPL')]
-msft_returns = msft[('Log Returns', 'MSFT')]
-jnj_returns = jnj[('Log Returns', 'JNJ')]
-jpm_returns = jpm[('Log Returns', 'JPM')]
-xom_returns = xom[('Log Returns', 'XOM')]
-nvda_returns = nvda[('Log Returns', 'NVDA')]
-vti_returns = vti[('Log Returns', 'VTI')]
-tlt_returns = tlt[('Log Returns', 'TLT')]
-gld_returns = gld[('Log Returns', 'GLD')]
-vnq_returns = vnq[('Log Returns', 'VNQ')]
-sp500_returns = sp500[('Log Returns', '^GSPC')]
+# --- Data Loading Function (cached) ---
+with st.expander("Show data loading code snippet"):  
+    st.code(
+        '''@st.cache_data
+def load_returns(weights_dict):
+    """Load cleaned log-return CSVs and return DataFrame."""
+    dfs = {}
+    for sym in weights_dict:
+        fname = sym.lstrip('^').lower() + '_data_cleaned.csv'
+        df = pd.read_csv(fname, header=[0,1], index_col=0, parse_dates=True)
+        dfs[sym] = df[('Log Returns', sym)]
+    return pd.DataFrame(dfs)''', language='python'
+    )
 
-portfolio_returns = pd.DataFrame({
-    'AAPL': aapl_returns,
-    'MSFT': msft_returns,
-    'JNJ': jnj_returns,
-    'JPM': jpm_returns,
-    'XOM': xom_returns,
-    'NVDA': nvda_returns,
-    'VTI': vti_returns,
-    'TLT': tlt_returns,
-    'GLD': gld_returns,
-    'VNQ': vnq_returns,
-    '^GSPC': sp500_returns
-})
+@st.cache_data
+def load_returns(weights_dict):
+    dfs = {}
+    for sym in weights_dict:
+        fname = sym.lstrip('^').lower() + '_data_cleaned.csv'
+        df = pd.read_csv(fname, header=[0,1], index_col=0, parse_dates=True)
+        dfs[sym] = df[('Log Returns', sym)]
+    return pd.DataFrame(dfs)
 
-returns = (portfolio_returns * weights).sum(axis=1)
+returns_df = load_returns(weights)
+portfolio_returns = (returns_df * pd.Series(weights)).sum(axis=1)
 
-# --- Other Sidebar Inputs ---
-confidence_level = st.sidebar.slider("Confidence Level", 0.80, 0.99, 0.95, 0.01)
-historical_window = 1000  # Set a fixed historical window of 1000 days
-portfolio_value = st.sidebar.number_input("Portfolio Value ($)", min_value=1_000.0, value=100_000.0, step=1_000.0, format="%.2f")
+# --- VaR & ES Computations ---
+alpha = 1 - confidence
+windowed = portfolio_returns[-historical_window:]
+# Historical VaR 1-day
+hist_var_1d = np.percentile(windowed, alpha * 100)
+# Scale VaR to multi-day horizon (square-root-of-time)
+tot_var = hist_var_1d * np.sqrt(horizon)
+# Expected Shortfall (ES)
+es_1d = windowed[windowed <= hist_var_1d].mean()
+es = es_1d * np.sqrt(horizon)
 
-# --- VaR Calculations ---
-percentile = (1 - confidence_level) * 100
-mu = returns[-historical_window:].mean()
-sigma = returns[-historical_window:].std()
-z = norm.ppf(1 - confidence_level)
+# --- Metrics Display ---
+st.markdown("### Key Risk Metrics")
+col1, col2 = st.columns(2)
+col1.metric(f"{horizon}-day VaR ({confidence:.1%})", f"{tot_var*100:.2f}%")
+if show_es:
+    col2.metric(f"{horizon}-day ES", f"{es*100:.2f}%")
 
-historical_VaR = np.percentile(returns[-historical_window:], percentile)
-parametric_VaR = mu + z * sigma
+# --- Histogram Visualization ---
+st.markdown("### Return Distribution with VaR & ES")
+fig = go.Figure()
+fig.add_trace(go.Histogram(x=windowed * 100, nbinsx=50, opacity=0.75, name="Returns"))
+fig.add_vline(x=tot_var * 100, line=dict(color="red", dash="dash"), annotation_text="VaR", annotation_position="top right")
+if show_es:
+    fig.add_vline(x=es * 100, line=dict(color="purple", dash="dash"), annotation_text="ES", annotation_position="top right")
+fig.update_layout(xaxis_title="Daily Return (%)", yaxis_title="Frequency", bargap=0.2)
+st.plotly_chart(fig, use_container_width=True)
 
-# Monte Carlo Simulation
-df = 5  # for t-distribution
-n_simulations = 10000
-sim_returns = np.random.standard_t(df, n_simulations) * sigma / np.sqrt(df / (df - 2)) + mu
-monte_carlo_VaR = np.percentile(sim_returns, percentile)
+with st.expander("Show risk calculation snippet"):
+    st.code(
+        '''# Historical VaR
+hist_var_1d = np.percentile(windowed, alpha * 100)
+# Scale to horizon
+tot_var = hist_var_1d * np.sqrt(horizon)
+# ES: average loss beyond VaR
+es_1d = windowed[windowed <= hist_var_1d].mean()
+es = es_1d * np.sqrt(horizon)''', language='python'
+    )
 
-# --- Plotting ---
-st.subheader("Overlay of VaR Estimates")
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.hist(returns[-historical_window:] * 100, bins=50, color='#d6eaf8', edgecolor='black', alpha=0.8)
-ax.axvline(historical_VaR * 100, color='red', linestyle='--', linewidth=2, label=f"Historical VaR (1000-day, {historical_VaR*100:.2f}%)")
-ax.axvline(parametric_VaR * 100, color='green', linestyle='--', linewidth=2, label=f"Parametric VaR ({parametric_VaR*100:.2f}%)")
-ax.axvline(monte_carlo_VaR * 100, color='blue', linestyle='--', linewidth=2, label=f"Monte Carlo VaR (t-dist, {monte_carlo_VaR*100:.2f}%)")
-ax.set_title("Overlay of 1-Day VaR Methods", fontsize=16, fontweight='bold')
-ax.set_xlabel("Daily Log Return (%)")
-ax.set_ylabel("Frequency")
-ax.legend()
-ax.grid(True, linestyle="--", alpha=0.3)
-st.pyplot(fig)
+# --- Metrics Table & Export ---
+st.markdown("### Summary Table & Download")
+metrics = ["VaR"] + (["ES"] if show_es else [])
+values_pct = [tot_var] + ([es] if show_es else [])
+values_usd = [tot_var * portfolio_value] + ([es * portfolio_value] if show_es else [])
+df = pd.DataFrame({"Metric": metrics,
+                   "Value (%)": [f"{v*100:.2f}%" for v in values_pct],
+                   "Value (USD)": [f"${v:,.2f}" for v in values_usd]})
+st.table(df)
+st.download_button("Download Metrics as CSV", df.to_csv(index=False), file_name="var_es_metrics.csv")
 
-# --- Display VaR Table ---
-st.subheader("Value at Risk Table")
-var_methods = ["Historical", "Parametric", "Monte Carlo"]
-var_percents = np.array([historical_VaR, parametric_VaR, monte_carlo_VaR]) * 100
-var_amounts = np.array([historical_VaR, parametric_VaR, monte_carlo_VaR]) * portfolio_value
-var_table = pd.DataFrame({
-    "Method": var_methods,
-    "VaR (%)": [f"{v:.2f}%" for v in var_percents],
-    "VaR ($)": [f"${v:,.2f}" for v in var_amounts]
-})
-st.dataframe(
-    var_table.style.set_properties(**{
-        'background-color': '#f9f9f9',
-        'color': '#222',
-        'border-color': 'black',
-        'font-size': '20px',
-        'text-align': 'center',
-        'vertical-align': 'middle',
-        'padding': '8px',
-    }).set_table_styles([
-        {'selector': 'th', 'props': [
-            ('background-color', '#d6eaf8'),
-            ('color', '#222'),
-            ('font-size', '22px'),
-            ('text-align', 'center'),
-            ('vertical-align', 'middle'),
-            ('padding', '8px'),
-        ]},
-        {'selector': '', 'props': [
-            ('border', '2px solid black'),
-        ]}
-    ]),
-    use_container_width=True,
-    height=150
+# --- Explanatory Caption ---
+st.caption(
+    f"These results are based on the most recent {historical_window} days of returns. "
+    f"VaR and ES are scaled to a {horizon}-day horizon via the square-root-of-time rule, as commonly used in practice."
 )

@@ -1,0 +1,58 @@
+[
+    {
+      "name": "Geopolitical Shock",
+      "description": "Surprise realization of major geopolitical risk events leads to sharp equity corrections and flight to safe havens.",
+      "date_generated": "2025-04-19",
+      "shocks": {
+        "AAPL": -0.08,
+        "MSFT": -0.07,
+        "JNJ": -0.03,
+        "JPM": -0.05,
+        "XOM":  0.05,
+        "NVDA": -0.10,
+        "VTI": -0.06,
+        "TLT":  0.03,
+        "GLD":  0.04,
+        "VNQ": -0.08,
+        "^GSPC": -0.06
+      }
+    },
+    {
+      "name": "Sovereign Debt Stress",
+      "description": "Widening sovereign risk premiums and higher CDS spreads trigger broad bond sell-off and equity pullback.",
+      "date_generated": "2025-04-19",
+      "shocks": {
+        "AAPL": -0.05,
+        "MSFT": -0.05,
+        "JNJ": -0.02,
+        "JPM": -0.07,
+        "XOM": -0.03,
+        "NVDA": -0.06,
+        "VTI": -0.04,
+        "TLT": -0.10,
+        "GLD":  0.02,
+        "VNQ": -0.04,
+        "^GSPC": -0.05
+      }
+    },
+    {
+      "name": "Euro Area Policy Uncertainty",
+      "description": "Elevated policy uncertainty and geopolitical tensions weigh on Euro area growth, leading to mixed asset impacts.",
+      "date_generated": "2025-04-19",
+      "shocks": {
+        "AAPL": -0.04,
+        "MSFT": -0.04,
+        "JNJ": -0.01,
+        "JPM": -0.03,
+        "XOM": -0.02,
+        "NVDA": -0.05,
+        "VTI": -0.03,
+        "TLT":  0.01,
+        "GLD":  0.01,
+        "VNQ": -0.03,
+        "^GSPC": -0.04
+      }
+    }
+  ]
+  
+  
