@@ -7,11 +7,12 @@ from scipy.stats import norm
 # --- Page Configuration & Theme ---
 st.set_page_config(page_title="Visualizing Risk", layout="wide", page_icon="📊")
 
+st.title("Portfolio Risk Overview")
+
 # --- Section: Introduction ---
 st.markdown(
     """
-    ## Portfolio Risk Overview
-    This interactive dashboard illustrates **Value at Risk (VaR)** and **Expected Shortfall (ES)** for a customizable multi-asset portfolio. Recruiters can inspect both the quantitative results and the underlying code snippets (expand the sections below).
+    This interactive dashboard illustrates **Value at Risk (VaR)** and **Expected Shortfall (ES)** for a customizable multi-asset portfolio. Last updated on 20 April, 2025.
     """
 )
 
@@ -65,7 +66,14 @@ for asset in asset_list:
     )
 
 st.sidebar.markdown("#### 2) Risk Parameters")
-confidence = st.sidebar.slider("Confidence Level", 0.90, 0.995, 0.99, step=0.005)
+levels = [90.0, 95.0, 97.5, 99.0, 99.5]
+pct = st.sidebar.select_slider(
+    "Confidence Level",
+    options=levels,
+    value=99.0,
+    format_func=lambda x: f"{x:.1f}%"
+)
+confidence = pct / 100
 horizon = st.sidebar.selectbox("VaR Horizon (days)", [1, 5, 10], index=0)
 historical_window = st.sidebar.slider("Historical Window (days)", 250, 2000, 1000, step=50)
 show_es = st.sidebar.checkbox("Display Expected Shortfall (ES)?", value=True)
@@ -157,3 +165,16 @@ st.caption(
     f"These results are based on the most recent {historical_window} days of returns. "
     f"VaR and ES are scaled to a {horizon}-day horizon via the square-root-of-time rule, as commonly used in practice."
 )
+
+# --- Assumptions & Limitations ---
+with st.expander("Assumptions & Limitations"):
+    st.markdown("""
+    - **Normality (Parametric VaR):**  We assume returns are Gaussian;  
+      extreme tails may be under‑estimated.  
+    - **Square‑root‑of‑time scaling:**  ES/VAR for multi‑day horizons scales by √h;  
+      ignores autocorrelation and volatility clustering.  
+    - **Historical Window:**  Limited to the last _N_ days;  
+      structural breaks (e.g. regime shifts) aren’t dynamically detected.  
+    - **Data quality:**  Relies on cleaned daily log‑returns CSVs;  
+      any gaps or corporate actions must be pre‑adjusted.
+    """)

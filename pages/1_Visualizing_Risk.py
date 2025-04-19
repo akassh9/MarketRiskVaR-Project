@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from scipy.stats import norm, t
+from scipy.stats import norm, t, binom
 import datetime
 
 # --- Page Configuration ---
@@ -10,7 +10,14 @@ st.set_page_config(page_title="Backtest & Breach Analysis", layout="wide", page_
 st.title("Rolling VaR Backtest & Breach Analysis")
 
 # --- Sidebar: Risk Parameters & Stress Window ---
-confidence = st.sidebar.slider("Confidence Level", 0.90, 0.995, 0.99, step=0.005)
+levels = [90.0, 95.0, 97.5, 99.0, 99.5]
+pct = st.sidebar.select_slider(
+    "Confidence Level",
+    options=levels,
+    value=99.0,
+    format_func=lambda x: f"{x:.1f}%"
+)
+confidence = pct / 100
 horizon = st.sidebar.selectbox("VaR Horizon (days)", [1, 5, 10], index=0)
 historical_window = st.sidebar.slider("Rolling Window (days)", 250, 2000, 1000, step=50)
 start_default = datetime.date(2020, 2, 20)
@@ -97,6 +104,43 @@ st.table(
         })
 )
 
+# --- Dynamic Basel Traffic‑Light (uses the slider) ---
+bt_days = historical_window
+
+# slice the last bt_days for returns & VaR
+returns_bt = portfolio_returns[-bt_days:]
+var_bt     = hist_var[-bt_days:]
+
+# count exceptions
+exceptions = int((returns_bt < var_bt).sum())
+
+# compute 95th & 99th percentile thresholds for a Binomial(bt_days, p)
+p = 1 - confidence  # e.g. 0.01 for 99% VaR
+green_max = int(binom.ppf(0.95, bt_days, p))
+amber_max = int(binom.ppf(0.99, bt_days, p))
+
+# classify
+if exceptions <= green_max:
+    zone_label, zone_color = "Green", "green"
+elif exceptions <= amber_max:
+    zone_label, zone_color = "Amber", "orange"
+else:
+    zone_label, zone_color = "Red",   "red"
+
+# render
+st.markdown("### Basel Traffic‑Light Status")
+st.markdown(
+    f"<span style='color:{zone_color}; font-weight:bold;'>{zone_label} Zone</span> — "
+    f"{exceptions} exceptions over last {bt_days} days  "
+    f"(green ≤ {green_max}, amber ≤ {amber_max}, red > {amber_max})",
+    unsafe_allow_html=True
+)
+
+
+st.markdown("### Rolling VAR Backtest")
+st.markdown(
+    f" This plot shows the portfolio's daily returns and its rolling VaR "
+)
 # --- Rolling VaR Plot with Stress Shading ---
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=idx, y=portfolio_returns, name='Daily Returns', line=dict(color='#4C72B0', width=1), opacity=0.7))
@@ -105,7 +149,6 @@ fig.add_trace(go.Scatter(x=idx, y=param_var, name='Parametric VaR', line=dict(co
 fig.add_trace(go.Scatter(x=idx, y=mc_var, name='Monte Carlo VaR', line=dict(color='#8172B2', width=2)))
 fig.add_vrect(x0=date_start, x1=date_end, fillcolor='grey', opacity=0.3, line_width=0, annotation_text='Stress Window', annotation_position='top left')
 fig.update_layout(
-    title='Rolling VaR Backtest',
     xaxis_title='Date', yaxis_title='Log Return',
     legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
 )
@@ -130,3 +173,16 @@ st.caption(
     "Each bar shows how far the portfolio's loss exceeded its Historical VaR on that date. "
     "Darker reds indicate larger breaches."
 )
+
+# --- Assumptions & Limitations ---
+with st.expander("Assumptions & Limitations"):
+    st.markdown("""
+    - **Window choice:**  Traffic‑light thresholds are calibrated to a Binomial(bt_days, p) model;  
+      very small or large windows can dilute regulatory relevance.  
+    - **Stress window selection:**  Manually chosen dates (e.g. COVID period) —  
+      may not capture all stress events.  
+    - **Sample independence:**  Assumes daily returns are iid;  
+      serial correlation or volatility clustering can bias breach counts.  
+    - **Not capital calculation:**  This is back‑test diagnostics only,  
+      not a full Pillar 1 capital requirement.
+    """)

@@ -8,6 +8,7 @@ from scipy.stats import norm
 # --- Page Configuration ---
 st.set_page_config(page_title="Stress Test Scenarios", layout="wide", page_icon="⚡️")
 st.title("LLM‑Generated Stress Test Scenarios")
+st.markdown("These risk events have been geenerated by Google Gemini 2.0 Flash using the FED Financial Stability Report, IMF Global Financial Stability Report, and the European Central Bank Financial Stability Review.  The scenarios are not guaranteed to be accurate or realistic, and should be used for illustrative purposes only.")
 
 # --- Retrieve Weights from Session State ---
 def get_default_weights():
@@ -34,6 +35,8 @@ scenario = next(s for s in scenarios if s['name'] == choice)
 st.markdown(f"#### {scenario['name']}")
 st.markdown(scenario.get('description', 'No description available.'))
 st.caption(f"*Generated on: {scenario.get('date_generated','N/A')}*")
+
+
 
 # --- Compute Shock Impact ---
 shock_pct = pd.Series(scenario['shocks']) * multiplier
@@ -84,7 +87,14 @@ returns_df = load_returns(weights)
 portfolio_returns = (returns_df * pd.Series(weights)).sum(axis=1)
 
 # Sidebar inputs for VaR/ES
-confidence = st.sidebar.slider("Recompute Confidence Level", 0.90, 0.995, 0.99, step=0.005)
+levels = [90.0, 95.0, 97.5, 99.0, 99.5]
+pct = st.sidebar.select_slider(
+    "Confidence Level",
+    options=levels,
+    value=99.0,
+    format_func=lambda x: f"{x:.1f}%"
+)
+confidence = pct / 100
 horizon = st.sidebar.selectbox("Recompute Horizon (days)", [1,5,10], index=0)
 historical_window = st.sidebar.slider("Recompute Window (days)", 250, 2000, 1000, step=50)
 
@@ -108,3 +118,16 @@ st.markdown("### VaR & ES Under Scenario")
 col1, col2 = st.columns(2)
 col1.metric(f"{horizon}-day VaR", f"{var_h*100:.2f}%")
 col2.metric(f"{horizon}-day ES", f"{es_h*100:.2f}%")
+
+# --- Assumptions & Limitations ---
+with st.expander("Assumptions & Limitations"):
+    st.markdown("""
+    - **Linear shock scaling:**  We multiply percent‑moves by a single “intensity” factor;  
+      ignores nonlinear impacts and changing correlations.  
+    - **Static weights:**  Portfolio allocations are fixed;  
+      no rebalancing or hedging during stress.  
+    - **Scenario realism:**  Pre‑built scenarios may not capture evolving market regimes;  
+      always validate against domain expertise.  
+    - **LLM provenance:**  If scenarios are AI‑generated,  
+      they may reflect training biases or hallucinations—treat them as illustrative.
+    """)

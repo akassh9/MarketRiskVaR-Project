@@ -1,7 +1,7 @@
 [
     {
       "name": "Geopolitical Shock",
-      "description": "Surprise realization of major geopolitical risk events leads to sharp equity corrections and flight to safe havens.",
+      "description": "Surprise realization of major geopolitical risk events leads to sharp equity corrections and flight to safe havens. Reports repeatedly highlight how military conflicts and surprise “geopolitical risk realizations” spike volatility across both equities and option markets, triggering sudden tail events.",
       "date_generated": "2025-04-19",
       "shocks": {
         "AAPL": -0.08,
@@ -19,7 +19,7 @@
     },
     {
       "name": "Sovereign Debt Stress",
-      "description": "Widening sovereign risk premiums and higher CDS spreads trigger broad bond sell-off and equity pullback.",
+      "description": "Widening sovereign risk premiums and higher CDS spreads trigger broad bond sell-off and equity pullback. The IMF has flagged widening sovereign CDS spreads—especially in emerging‑market and lower‑rated jurisdictions—as a precursor to broader credit and equity sell‑offs. When risk premia blow out, it often cascades into corporate credit, emerging equities, and even “risk‑free” government bonds in some markets.",
       "date_generated": "2025-04-19",
       "shocks": {
         "AAPL": -0.05,
@@ -37,7 +37,7 @@
     },
     {
       "name": "Euro Area Policy Uncertainty",
-      "description": "Elevated policy uncertainty and geopolitical tensions weigh on Euro area growth, leading to mixed asset impacts.",
+      "description": "Elevated policy uncertainty and geopolitical tensions weigh on Euro area growth, leading to mixed asset impacts. Analysts repeatedly flag “policy uncertainty and geopolitical tensions weighing on euro‑area growth,” sovereign debt sustainability concerns, and spillover risks to global markets. With the ECB navigating uneven inflation and growth dynamics, a policy‑driven shock is very topical—and very different in its cross‑asset fingerprint from a Fed‑centric event.",
       "date_generated": "2025-04-19",
       "shocks": {
         "AAPL": -0.04,
