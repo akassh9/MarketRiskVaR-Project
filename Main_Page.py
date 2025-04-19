@@ -166,6 +166,11 @@ st.caption(
     f"VaR and ES are scaled to a {horizon}-day horizon via the square-root-of-time rule, as commonly used in practice."
 )
 
+# Add the HTML snippet
+verification_id = "c284ae74-176c-4a38-a5d2-8f8da75f083e"  # Replace with your actual ID
+html_code = f'<div className="{verification_id}" />'
+st.markdown(html_code, unsafe_allow_html=True)
+
 # --- Assumptions & Limitations ---
 with st.expander("Assumptions & Limitations"):
     st.markdown("""
