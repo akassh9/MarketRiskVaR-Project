@@ -128,8 +128,31 @@ col1.metric(f"{horizon}-day VaR ({confidence:.1%})", f"{tot_var*100:.2f}%")
 if show_es:
     col2.metric(f"{horizon}-day ES", f"{es*100:.2f}%")
 
-# --- Histogram Visualization ---
+# --- VaR and ES definitions ---
+st.markdown(
+    """
+    - **Value at Risk (VaR)**: The maximum expected loss over a specified time horizon at a given confidence level For example, if the 1-day VaR is at 2.5% with a 99% confidence level, it means that you have a 1% chance of loosing 2.5% value of your portfolio or more in a single day.
+    - **Expected Shortfall (ES)**: The average loss in the worst-case scenarios beyond the VaR threshold. ES builds on top of VaR, for example if the 1-day ES is at 3.0% with a 99% confidence level, it means that if you were to experience a loss worse than the VaR (the 1% worst-case scenarios), on average, you could expect to lose 3.0% of your portfolio's value.
+    """
+)
+
+# --- Histogram Title ---
+
 st.markdown("### Return Distribution with VaR & ES")
+
+# --- Chart Explaination ---
+st.markdown(
+    """
+    The histogram below shows the daily log-return distribution of the portfolio, with the red line indicating the VaR threshold and the purple line (if shown) indicating the ES threshold. The histogram is based on the most recently selected days of returns.
+    The VaR is calculated using the historical method, which is a non-parametric approach that uses the empirical distribution of past returns to estimate potential future losses. The ES is calculated as the average loss beyond the VaR threshold.
+    There are three major methods to calculate VaR:
+    1. **Historical VaR**: This method uses the historical distribution of returns to estimate potential future losses. It is non-parametric and does not assume any specific distribution for returns.
+    2. **Parametric VaR**: This method assumes that returns follow a normal distribution and uses the mean and standard deviation of past returns to estimate potential future losses. It is parametric and relies on the assumption of normality.
+    3. **Monte Carlo VaR**: This method uses a simulation approach to generate a large number of random returns based on the historical distribution and then estimates potential future losses. It is flexible and can accommodate non-normal distributions.
+    """
+)
+
+# --- Histogram Visualization ---
 fig = go.Figure()
 fig.add_trace(go.Histogram(x=windowed * 100, nbinsx=50, opacity=0.75, name="Returns"))
 fig.add_vline(x=tot_var * 100, line=dict(color="red", dash="dash"), annotation_text="VaR", annotation_position="top right")
@@ -137,6 +160,7 @@ if show_es:
     fig.add_vline(x=es * 100, line=dict(color="purple", dash="dash"), annotation_text="ES", annotation_position="top right")
 fig.update_layout(xaxis_title="Daily Return (%)", yaxis_title="Frequency", bargap=0.2)
 st.plotly_chart(fig, use_container_width=True)
+
 
 with st.expander("Show risk calculation snippet"):
     st.code(
@@ -151,6 +175,12 @@ es = es_1d * np.sqrt(horizon)''', language='python'
 
 # --- Metrics Table & Export ---
 st.markdown("### Summary Table & Download")
+st.markdown(
+    """
+    The table below summarizes the calculated VaR and ES metrics for a portfolio that can be edited (partially) using the panel on the left. 
+    You can download the metrics as a CSV file for further analysis.
+    """
+)
 metrics = ["VaR"] + (["ES"] if show_es else [])
 values_pct = [tot_var] + ([es] if show_es else [])
 values_usd = [tot_var * portfolio_value] + ([es * portfolio_value] if show_es else [])
@@ -174,12 +204,8 @@ st.markdown(html_code, unsafe_allow_html=True)
 # --- Assumptions & Limitations ---
 with st.expander("Assumptions & Limitations"):
     st.markdown("""
-    - **Normality (Parametric VaR):**  We assume returns are Gaussian;  
-      extreme tails may be under‑estimated.  
-    - **Square‑root‑of‑time scaling:**  ES/VAR for multi‑day horizons scales by √h;  
-      ignores autocorrelation and volatility clustering.  
-    - **Historical Window:**  Limited to the last _N_ days;  
-      structural breaks (e.g. regime shifts) aren’t dynamically detected.  
-    - **Data quality:**  Relies on cleaned daily log‑returns CSVs;  
-      any gaps or corporate actions must be pre‑adjusted.
+    - **Normality (Parametric VaR):**  We assume returns are Gaussian; extreme tails may be under‑estimated.  
+    - **Square‑root‑of‑time scaling:**  ES/VAR for multi‑day horizons scales by √h; ignores autocorrelation and volatility clustering.  
+    - **Historical Window:**  Limited to the last _N_ days; structural breaks (e.g. regime shifts) aren’t dynamically detected.  
+    - **Data quality:**  Relies on cleaned daily log‑returns CSVs; any gaps or corporate actions must be pre‑adjusted.
     """)

@@ -8,7 +8,9 @@ from scipy.stats import norm
 # --- Page Configuration ---
 st.set_page_config(page_title="Stress Test Scenarios", layout="wide", page_icon="⚡️")
 st.title("LLM‑Generated Stress Test Scenarios")
-st.markdown("These risk events have been geenerated by Google Gemini 2.0 Flash using the FED Financial Stability Report, IMF Global Financial Stability Report, and the European Central Bank Financial Stability Review.  The scenarios are not guaranteed to be accurate or realistic, and should be used for illustrative purposes only.")
+st.markdown("These risk events have been geenerated by Google Gemini 2.0 Flash using the FED Financial Stability Report, IMF Global Financial Stability Report, and the European Central Bank Financial Stability Review.  The scenarios are not guaranteed to be accurate or realistic, and should be used for illustrative purposes only."
+            "The stress tests are a good way to understand the potential impact of extreme market events on your portfolio."
+)
 
 # --- Retrieve Weights from Session State ---
 def get_default_weights():
@@ -59,6 +61,7 @@ st.download_button("Download Scenario P&L", df.to_csv(index=False), file_name="s
 
 # --- Waterfall Chart of P&L ---
 st.markdown("### Waterfall of P&L by Asset")
+st.markdown("This waterfall chart visualizes the profit and loss (P&L) for each asset in the portfolio under the selected stress test scenario. The height of each bar represents the P&L in USD, providing a clear view of the impact of the scenario on individual assets.")
 waterfall = go.Figure()
 waterfall.add_trace(go.Bar(
     x=df['Asset'], y=df['P&L (USD)'],
@@ -122,12 +125,8 @@ col2.metric(f"{horizon}-day ES", f"{es_h*100:.2f}%")
 # --- Assumptions & Limitations ---
 with st.expander("Assumptions & Limitations"):
     st.markdown("""
-    - **Linear shock scaling:**  We multiply percent‑moves by a single “intensity” factor;  
-      ignores nonlinear impacts and changing correlations.  
-    - **Static weights:**  Portfolio allocations are fixed;  
-      no rebalancing or hedging during stress.  
-    - **Scenario realism:**  Pre‑built scenarios may not capture evolving market regimes;  
-      always validate against domain expertise.  
-    - **LLM provenance:**  If scenarios are AI‑generated,  
-      they may reflect training biases or hallucinations—treat them as illustrative.
+    - **Linear shock scaling:**  We multiply percent‑moves by a single “intensity” factor; ignores nonlinear impacts and changing correlations.  
+    - **Static weights:**  Portfolio allocations are fixed; no rebalancing or hedging during stress.  
+    - **Scenario realism:**  Pre‑built scenarios may not capture evolving market regimes; always validate against domain expertise.  
+    - **LLM provenance:**  If scenarios are AI‑generated, they may reflect training biases or hallucinations—treat them as illustrative.
     """)

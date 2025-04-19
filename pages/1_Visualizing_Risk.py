@@ -95,7 +95,14 @@ if show_es:
     ]
 
 # --- Display Breach Rate Table (Centered Text) ---
-st.markdown("### Breach Rates by Period")
+st.markdown(
+    "### Breach Rates by Period\n\n"
+    "A breach occurs when the portfolio's return is less than the VaR on that date. "
+    "Breaches are shown as a percentage of the total number of observations in that period. "
+    "As seen on the table during periods of high volatility (e.g. COVID), the breach rate is higher. "
+    "A classic pitfall of VaR is that it can be breached multiple times in a row."
+    "ES tries to address this by averaging the worst losses, but it can also be breached multiple times."
+)
 st.table(
     df_breach.style
         .format({col: "{:.2%}" for col in df_breach.columns})
@@ -130,6 +137,13 @@ else:
 # render
 st.markdown("### Basel Traffic‑Light Status")
 st.markdown(
+    """
+    Basel II/III accords require banks to hold capital for market risk based on VaR. Specifically, under Basel II’s internal models approach, banks compute a 10-day 99% VaR for their trading portfolios and backtest it daily. 
+    Regulators classify the model’s performance using a “traffic light” system based on backtesting results: a model is in the green zone if it has 4 or fewer VaR exceptions in 250 days, yellow if 5–9 exceptions, and red if 10 or more exceptions.
+    While our implementation here is simplified, it serves as a useful diagnostic tool for assessing the performance of the VaR model.
+    """
+)
+st.markdown(
     f"<span style='color:{zone_color}; font-weight:bold;'>{zone_label} Zone</span> — "
     f"{exceptions} exceptions over last {bt_days} days  "
     f"(green ≤ {green_max}, amber ≤ {amber_max}, red > {amber_max})",
@@ -137,7 +151,7 @@ st.markdown(
 )
 
 
-st.markdown("### Rolling VAR Backtest")
+st.markdown("### Rolling VaR Backtest")
 st.markdown(
     f" This plot shows the portfolio's daily returns and its rolling VaR "
 )
@@ -156,6 +170,13 @@ st.plotly_chart(fig, use_container_width=True)
 
 # --- Violation Severity During Stress Window ---
 st.markdown("### Violation Severity During Stress Window")
+st.markdown(
+    f" This plot shows how much the portfolio's loss exceeded its Historical VaR during the selected stress window. "
+    "The darker the red, the larger the breach."
+    "This is to show the scale of the problem just using VaR as a risk measure poses."
+    "Each bar shows how far the portfolio's loss exceeded its Historical VaR on that date. "
+    "Darker reds indicate larger breaches."
+)
 period_returns = portfolio_returns[mask_mid]
 period_var = hist_var[mask_mid]
 severity = (-period_returns - period_var).clip(lower=0) * 100
@@ -169,20 +190,11 @@ fig2 = go.Figure(
 fig2.update_layout(xaxis_tickformat='%b %Y', xaxis_title='Date', yaxis_title='Loss Beyond VaR (%)')
 st.plotly_chart(fig2, use_container_width=True)
 
-st.caption(
-    "Each bar shows how far the portfolio's loss exceeded its Historical VaR on that date. "
-    "Darker reds indicate larger breaches."
-)
-
 # --- Assumptions & Limitations ---
 with st.expander("Assumptions & Limitations"):
     st.markdown("""
-    - **Window choice:**  Traffic‑light thresholds are calibrated to a Binomial(bt_days, p) model;  
-      very small or large windows can dilute regulatory relevance.  
-    - **Stress window selection:**  Manually chosen dates (e.g. COVID period) —  
-      may not capture all stress events.  
-    - **Sample independence:**  Assumes daily returns are iid;  
-      serial correlation or volatility clustering can bias breach counts.  
-    - **Not capital calculation:**  This is back‑test diagnostics only,  
-      not a full Pillar 1 capital requirement.
+    - **Window choice:**  Traffic‑light thresholds are calibrated to a Binomial(bt_days, p) model; very small or large windows can dilute regulatory relevance.  
+    - **Stress window selection:**  Manually chosen dates (e.g. COVID period) may not capture all stress events.  
+    - **Sample independence:**  Assumes daily returns are iid; serial correlation or volatility clustering can bias breach counts.  
+    - **Not capital calculation:**  This is back‑test diagnostics only, not a full Pillar 1 capital requirement.
     """)
